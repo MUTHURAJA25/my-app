@@ -1,9 +1,13 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'maven3'     // Jenkins will install Maven automatically
+    }
+
     stages {
 
-        stage('SCM Checkout') {
+        stage('Checkout') {
             steps {
                 git 'https://github.com/damodaranj/my-app.git'
             }
@@ -11,8 +15,8 @@ pipeline {
 
         stage('Maven Build') {
             steps {
-                sh "mvn clean package"
-                sh "mv target/myweb*.war target/newapp.war"
+                sh 'mvn clean package'
+                sh 'mv target/myweb*.war target/newapp.war'
             }
         }
 
@@ -25,31 +29,25 @@ pipeline {
         stage('DockerHub Push') {
             steps {
                 withCredentials([string(credentialsId: 'dockerPass', variable: 'dockerPassword')]) {
-                    sh "docker login -u saidamo -p ${dockerPassword}"
+                    sh "echo ${dockerPassword} | docker login -u saidamo --password-stdin"
                 }
                 sh 'docker push saidamo/myweb:0.0.2'
             }
         }
 
-        stage('Kubernetes Deployment') {
+        stage('Kubernetes Deploy') {
             steps {
                 sh """
-                    echo 'Deploying to Kubernetes...'
                     kubectl apply -f k8s/deployment.yaml
                     kubectl apply -f k8s/service.yaml
                 """
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Verify') {
             steps {
-                sh """
-                    echo 'Checking pods...'
-                    kubectl get pods
-
-                    echo 'Checking service...'
-                    kubectl get svc
-                """
+                sh 'kubectl get pods'
+                sh 'kubectl get svc'
             }
         }
     }
