@@ -9,20 +9,20 @@ pipeline {
             }
         }
 
-        stage('Compile & Package') {
+        stage('Maven Build') {
             steps {
                 sh "mvn clean package"
                 sh "mv target/myweb*.war target/newapp.war"
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Docker Build') {
             steps {
                 sh 'docker build -t saidamo/myweb:0.0.2 .'
             }
         }
 
-        stage('Docker Image Push to DockerHub') {
+        stage('DockerHub Push') {
             steps {
                 withCredentials([string(credentialsId: 'dockerPass', variable: 'dockerPassword')]) {
                     sh "docker login -u saidamo -p ${dockerPassword}"
@@ -31,14 +31,26 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Kubernetes Deployment') {
             steps {
                 sh """
+                    echo 'Deploying to Kubernetes...'
                     kubectl apply -f k8s/deployment.yaml
                     kubectl apply -f k8s/service.yaml
                 """
             }
         }
 
+        stage('Verify Deployment') {
+            steps {
+                sh """
+                    echo 'Checking pods...'
+                    kubectl get pods
+
+                    echo 'Checking service...'
+                    kubectl get svc
+                """
+            }
+        }
     }
 }
