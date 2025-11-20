@@ -29,7 +29,7 @@ pipeline {
         stage('DockerHub Push') {
             steps {
                 withCredentials([string(credentialsId: 'dockerPass', variable: 'dockerPassword')]) {
-                    sh "echo ${dockerPassword} | docker login -u saidamo --password-stdin"
+                    sh "echo ${dockerPassword} | docker login -u muthuraja25 --password-stdin"
                 }
                 sh 'docker push saidamo/myweb:0.0.2'
             }
